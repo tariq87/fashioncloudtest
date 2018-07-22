@@ -2,6 +2,8 @@ provider "aws" {
   region = "us-east-1"
 }
 
+data "aws_availability_zones" "all" {}
+
 resource "aws_vpc" "myvpc" {
   cidr_block = "10.0.0.0/16"
   enable_dns_hostnames = true
@@ -70,7 +72,7 @@ resource "aws_security_group" "mysg" {
     cidr_blocks     = ["0.0.0.0/0"]
   }
 
-  vpc_id="${aws_vpc.myvpc.id}"
+  vpc_id = "${aws_vpc.myvpc.id}"
 
 }
 
@@ -92,8 +94,57 @@ resource "aws_instance" "myapp" {
    user_data = "${file("userdata.sh")}"
 
   tags {
-    Name = "webserver-${count.index}"
+    Name = "webserver-${count.index + 1}"
   }
+}
+
+output "instance_ips" {
+    value = ["${aws_instance.myapp.*.public_ip}"]
+}
+
+resource "aws_security_group" "elb" {
+  name = "fashioncloud-elb-sg"
+  vpc_id = "${aws_vpc.myvpc.id}"
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port = 80
+    to_port = 80
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
+}
+
+
+
+
+resource "aws_elb" "myelb" {
+  name = "fashioncloudELB"
+  subnets = ["${aws_subnet.mysub.id}"]
+  security_groups = ["${aws_security_group.elb.id}"]
+  health_check {
+    healthy_threshold = 2
+    unhealthy_threshold = 2
+    timeout = 3
+    interval = 30
+    target = "HTTP:80/"
+  }
+
+
+  listener {
+    lb_port = 80
+    lb_protocol = "http"
+    instance_port = 80
+    instance_protocol = "http"
+  }
+
+  instances = ["${aws_instance.myapp.*.id}"]
 }
 
 
