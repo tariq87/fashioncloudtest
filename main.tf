@@ -82,6 +82,7 @@ resource "aws_key_pair" "default" {
 
 resource "aws_instance" "myapp" {
    ami  = "ami-cfe4b2b0"
+   count = 2
    instance_type = "t2.micro"
    key_name = "${aws_key_pair.default.id}"
    subnet_id = "${aws_subnet.mysub.id}"
@@ -91,7 +92,7 @@ resource "aws_instance" "myapp" {
    user_data = "${file("userdata.sh")}"
 
   tags {
-    Name = "webserver"
+    Name = "webserver-${count.index}"
   }
 }
 
