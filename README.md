@@ -19,4 +19,6 @@ Once you have your profile set , you can start using the above terraform command
 The terraform template creates a vpc, security groups, ec2 instances and an ELB.
 The instances get registered to the ELB automatically and will take 60 seconds to come in service.
 The key would be provided to access the EC2 instances.
+
+To update the application, just update the userdata.sh file.
 </p>
